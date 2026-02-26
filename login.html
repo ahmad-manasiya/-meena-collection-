@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Meena Collection</title>
+    <style>
+        body { font-family: Roboto, Arial; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f1f3f6; margin:0; }
+        .login-box { background: white; width: 350px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .header-blue { background: #2874f0; color: white; padding: 30px 20px; text-align: left; }
+        .content { padding: 30px; text-align: center; }
+        input { width: 100%; padding: 12px 0; margin-bottom: 20px; border: none; border-bottom: 2px solid #e0e0e0; font-size: 16px; outline: none; transition: 0.3s; }
+        input:focus { border-bottom: 2px solid #2874f0; }
+        .main-btn { width: 100%; padding: 15px; border: none; background: #fb641b; color: white; font-weight: bold; cursor: pointer; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .footer-text { font-size: 12px; color: #878787; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <div class="header-blue">
+            <h2 style="margin:0;">Login</h2>
+            <p style="margin:10px 0 0; font-size:14px; opacity:0.8;">Get access to your Orders, Wishlist and Recommendations</p>
+        </div>
+        
+        <div class="content">
+            <input type="text" id="mobileNumber" placeholder="Enter Mobile Number">
+            
+            <div id="otpSection" style="display:none;">
+                <input type="text" id="otpInput" placeholder="Enter OTP (123456)">
+            </div>
+            
+            <p class="footer-text">By continuing, you agree to Meena Collection's Terms of Use.</p>
+            <button id="actionBtn" class="main-btn" onclick="sendOTP()">CONTINUE</button>
+        </div>
+    </div>
+
+    <script>
+        const ownerMobile = "9081685626"; // Asli admin number
+
+        function sendOTP() {
+            const mobile = document.getElementById('mobileNumber').value;
+            if(mobile.length < 10) {
+                alert("Please enter a valid 10-digit mobile number");
+                return;
+            }
+            
+            document.getElementById('otpSection').style.display = 'block';
+            document.getElementById('actionBtn').innerText = "VERIFY & LOGIN";
+            document.getElementById('actionBtn').onclick = verifyOTP;
+            alert("Demo OTP '123456' has been sent to " + mobile);
+        }
+
+        function verifyOTP() {
+            const mobile = document.getElementById('mobileNumber').value;
+            const otp = document.getElementById('otpInput').value;
+
+            if (otp === "123456") {
+                // FIXED: 'currentUser' set karna zaroori hai cart functionality ke liye
+                if (mobile === ownerMobile) {
+                    localStorage.setItem('userName', 'Admin');
+                    localStorage.setItem('currentUser', 'admin_user'); // Cart logic ke liye
+                    window.location.href = "admin-dashboard.html";
+                } else {
+                    let name = prompt("Please enter your name for Profile:", "Customer");
+                    let finalName = name || "Guest";
+                    
+                    // Dono keys save karein taaki profile aur cart dono chalein
+                    localStorage.setItem('userName', finalName);
+                    localStorage.setItem('currentUser', finalName); // Cart logic ke liye
+                    
+                    alert("Login Successful! Welcome " + finalName);
+                    window.location.href = "index.html"; 
+                }
+            } else {
+                alert("Invalid OTP!");
+            }
+        }
+    </script>
+</body>
+</html>

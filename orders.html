@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>My Orders | Meena Collection</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Roboto', Arial, sans-serif; background: #f1f3f6; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; min-height: 400px; }
+        h2 { color: #212121; font-size: 22px; margin-bottom: 20px; }
+        
+        /* Flipkart Style Order Card */
+        .order-card { 
+            background: white; 
+            border-radius: 4px; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            display: grid; 
+            grid-template-columns: 80px 1fr 150px 200px; 
+            gap: 20px; 
+            align-items: start; 
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .order-card img { width: 70px; height: 70px; object-fit: contain; background: #f9f9f9; border-radius: 4px; }
+        
+        .prod-info { display: flex; flex-direction: column; }
+        .prod-title { font-size: 14px; font-weight: 500; color: #212121; margin-bottom: 5px; }
+        .prod-meta { font-size: 12px; color: #878787; margin: 2px 0; }
+
+        .price-section { font-weight: bold; color: #212121; font-size: 16px; }
+
+        /* Status Styling */
+        .status-section { font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; }
+        
+        /* Colors based on status */
+        .bg-pending { background-color: #ff9f00; }
+        .bg-shipped { background-color: #2196F3; }
+        .bg-delivered { background-color: #388e3c; }
+        .bg-cancelled { background-color: #d32f2f; }
+        
+        .text-pending { color: #ff9f00; }
+        .text-shipped { color: #2196F3; }
+        .text-delivered { color: #388e3c; }
+
+        .loader { text-align: center; padding: 50px; color: #2874f0; background: white; border-radius: 8px; }
+        .btn-home { background:#2874f0; color:white; border:none; padding:10px 20px; cursor:pointer; border-radius:2px; font-weight:bold; text-decoration: none; display: inline-block; margin-top: 10px; }
+        
+        .empty-cart { text-align: center; padding: 60px; background: white; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fa fa-shopping-bag" style="color:#2874f0"></i> Mere Orders</h2>
+        
+        <div id="ordersList">
+            <div class="loader">
+                <i class="fa fa-spinner fa-spin fa-2x"></i>
+                <p>Aapke orders load ho rahe hain...</p>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="index.html" class="btn-home">Nayi Shopping Karein</a>
+        </div>
+    </div>
+
+    <script>
+        async function fetchMyOrders() {
+            const listContainer = document.getElementById('ordersList');
+            
+            // 1. Kis user ke orders dikhane hain?
+            let currentUser = localStorage.getItem('userName');
+            
+            if (!currentUser) {
+                listContainer.innerHTML = `
+                    <div class="empty-cart">
+                        <img src="https://img1a.flixcart.com/www/linchpin/fk-cp-zion/img/myorders-empty_f9f970.png" width="150"><br>
+                        <p>Aapne abhi tak koi order nahi kiya hai.</p>
+                        <a href="login.html" class="btn-home">Login Karein</a>
+                    </div>`;
+                return;
+            }
+
+            try {
+                // 2. Database se saare orders mangwayein
+                const response = await fetch('http://localhost:5000/api/orders');
+                if (!response.ok) throw new Error("Connection failed");
+                
+                const allOrders = await response.json();
+
+                // 3. Filtering Logic (Flipkart Style: loginUser matching)
+                // Hum check karenge ki order ka 'loginUser' ya 'customerName' hamare user se match ho
+                const myOrders = allOrders.filter(o => 
+                    (o.loginUser && o.loginUser === currentUser) || 
+                    (o.customerName && o.customerName === currentUser)
+                ).reverse(); // Naye orders upar dikhane ke liye
+
+                if (myOrders.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="empty-cart">
+                            <p>Hi <b>${currentUser}</b>, aapka koi order record nahi mila.</p>
+                            <a href="index.html" class="btn-home">Shopping Shuru Karein</a>
+                        </div>`;
+                    return;
+                }
+
+                // 4. Orders ko Render karein
+                listContainer.innerHTML = myOrders.map(o => {
+                    const statusClass = o.status ? o.status.toLowerCase() : 'pending';
+                    const displayStatus = o.status || 'Pending';
+                    const prodImg = o.image || 'https://via.placeholder.com/70?text=No+Image';
+
+                    return `
+                    <div class="order-card">
+                        <img src="${prodImg}" alt="Product">
+                        
+                        <div class="prod-info">
+                            <span class="prod-title">${o.productName}</span>
+                            <span class="prod-meta">Order ID: #${o._id ? o._id.slice(-6).toUpperCase() : 'N/A'}</span>
+                            <span class="prod-meta" style="font-size:11px; margin-top:5px;">
+                                <i class="fa fa-truck"></i> Delivery to: ${o.address.slice(0, 40)}...
+                            </span>
+                        </div>
+
+                        <div class="price-section">
+                            ₹${o.price}
+                        </div>
+
+                        <div class="status-section">
+                            <span class="status-dot bg-${statusClass}"></span>
+                            <div>
+                                <span style="font-weight:500" class="text-${statusClass}">${displayStatus}</span>
+                                <p style="font-size:11px; color:#878787; margin:4px 0;">On ${o.orderDate || 'Today'}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+            } catch (err) {
+                listContainer.innerHTML = `
+                    <div class="empty-cart" style="color:red">
+                        <i class="fa fa-exclamation-triangle fa-2x"></i>
+                        <p>Server se connect nahi ho paya. Backend check karein.</p>
+                    </div>`;
+            }
+        }
+
+        window.onload = fetchMyOrders;
+    </script>
+</body>
+</html>

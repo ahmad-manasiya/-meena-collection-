@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>My Cart | Meena Collection</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f1f3f6; margin: 0; padding: 20px; }
+        .cart-wrapper { max-width: 900px; margin: auto; display: flex; gap: 20px; }
+        .cart-items-box { flex: 2; background: white; padding: 20px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .price-details { flex: 1; background: white; padding: 20px; border-radius: 4px; height: fit-content; }
+        .item { display: flex; gap: 20px; border-bottom: 1px solid #eee; padding: 15px 0; align-items: center; }
+        .item img { width: 80px; height: 80px; object-fit: contain; }
+        .remove-btn { color: #ff4444; font-weight: bold; cursor: pointer; border: none; background: none; font-size: 14px; padding: 0; margin-top: 10px; }
+        .place-order-btn { background: #fb641b; color: white; border: none; padding: 15px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+    <div class="cart-wrapper">
+        <div class="cart-items-box">
+            <h2 id="cartTitle">My Cart (0)</h2>
+            <div id="cartContent"></div>
+        </div>
+
+        <div class="price-details">
+            <h3 style="color: #878787; font-size: 16px;">PRICE DETAILS</h3>
+            <hr>
+            <div style="display: flex; justify-content: space-between; margin: 15px 0;">
+                <span>Price</span> <span id="totalPrice">₹0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin: 15px 0; color: #388e3c;">
+                <span>Delivery Charges</span> <span>FREE</span>
+            </div>
+            <hr>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; margin: 20px 0;">
+                <span>Total Amount</span> <span id="finalAmount">₹0</span>
+            </div>
+            <button onclick="goToCheckout()" class="place-order-btn">PLACE ORDER</button>
+        </div>
+    </div>
+
+    <script>
+        // Sabse important: Yeh key wahi honi chahiye jo aapke header/index page mein hai
+        const STORAGE_KEY = 'meena_cart'; 
+
+        function renderCart() {
+            const contentDiv = document.getElementById('cartContent');
+            const titleElem = document.getElementById('cartTitle');
+            const totalElem = document.getElementById('totalPrice');
+            const finalElem = document.getElementById('finalAmount');
+            
+            // Storage se data uthayein (Fresh data)
+            let currentCart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            
+            let total = 0;
+            titleElem.innerText = `My Cart (${currentCart.length})`;
+
+            if(currentCart.length === 0) {
+                contentDiv.innerHTML = `
+                    <div style="text-align:center; padding:50px;">
+                        <i class="fas fa-shopping-cart" style="font-size:50px; color:#ccc;"></i>
+                        <p style="margin-top:15px; font-size:18px;">Aapka cart khali hai!</p>
+                        <a href="index.html" style="color:#2874f0; text-decoration:none; font-weight:bold;">Shopping Shuru Karein</a>
+                    </div>`;
+                totalElem.innerText = "₹0";
+                finalElem.innerText = "₹0";
+            } else {
+                contentDiv.innerHTML = "";
+                currentCart.forEach((item, index) => {
+                    // Price ko number mein convert karein
+                    let p = parseInt(item.price) || 0;
+                    total += p;
+                    
+                    // Image check (image ya img dono handle karein)
+                    let imgSource = item.image || item.img || 'placeholder.jpg';
+
+                    contentDiv.innerHTML += `
+                        <div class="item">
+                            <img src="${imgSource}">
+                            <div style="flex-grow:1;">
+                                <div style="font-size: 16px; font-weight: 500;">${item.name}</div>
+                                <div style="font-weight: bold; margin-top: 5px; font-size: 18px;">₹${p}</div>
+                                <button class="remove-btn" onclick="removeItem(${item.id || index})">REMOVE</button>
+                            </div>
+                        </div>`;
+                });
+                totalElem.innerText = "₹" + total;
+                finalElem.innerText = "₹" + total;
+            }
+        }
+
+        function removeItem(idOrIndex) {
+            let currentCart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            
+            // Agar ID hai toh ID se filter, varna index se splice
+            if (currentCart.length > 0 && currentCart[0].id) {
+                currentCart = currentCart.filter(item => item.id !== idOrIndex);
+            } else {
+                currentCart.splice(idOrIndex, 1);
+            }
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentCart));
+            renderCart();
+            
+            // Page refresh taaki header ka count bhi update ho jaye
+            window.location.reload();
+        }
+
+        function goToCheckout() {
+            let currentCart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            if(currentCart.length === 0) {
+                alert("Cart khali hai!");
+                return;
+            }
+            
+            const allNames = currentCart.map(i => i.name).join(', ');
+            const total = currentCart.reduce((s, i) => s + (parseInt(i.price) || 0), 0);
+            
+            // Checkout page ke liye backup
+            localStorage.setItem('pendingCheckout', JSON.stringify({name: allNames, price: total}));
+            
+            window.location.href = `checkout.html?name=${encodeURIComponent(allNames)}&price=${total}`;
+        }
+
+        // Load hone par function chalao
+        document.addEventListener('DOMContentLoaded', renderCart);
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile | Meena Collection</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: Roboto, Arial, sans-serif; background-color: #f1f3f6; margin: 0; padding: 0; }
+        .header-bar { background: #2874f0; color: white; padding: 15px 10%; font-size: 20px; font-weight: bold; }
+        .profile-container { max-width: 600px; margin: 30px auto; background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; }
+        .info-row { display: flex; border-bottom: 1px solid #f0f0f0; padding: 15px 0; align-items: center; }
+        .label { width: 150px; color: #878787; font-weight: 500; }
+        .value { color: #212121; font-weight: bold; flex: 1; }
+        .edit-btn { background: #fb641b; color: white; border: none; padding: 10px 25px; cursor: pointer; border-radius: 2px; font-weight: bold; margin-top: 20px; width: 100%; }
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #2874f0; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="header-bar">Meena Collection</div>
+    
+    <div class="profile-container">
+        <h2 style="margin-top: 0;">Personal Information</h2>
+        <div class="info-row">
+            <div class="label">Full Name</div>
+            <div class="value" id="dispName">N/A</div>
+        </div>
+        <div class="info-row">
+            <div class="label">User Role</div>
+            <div class="value" id="dispRole">Customer</div>
+        </div>
+        <div class="info-row">
+            <div class="label">Account Status</div>
+            <div class="value" style="color: green;">Active</div>
+        </div>
+        
+        <button class="edit-btn">EDIT PROFILE</button>
+        <a href="index.html" class="back-link"><i class="fa fa-arrow-left"></i> Back to Shopping</a>
+    </div>
+
+    <script>
+        // LocalStorage se data load karna
+        document.getElementById('dispName').innerText = localStorage.getItem('userName') || "Guest User";
+        document.getElementById('dispRole').innerText = localStorage.getItem('userRole') || "Customer";
+    </script>
+</body>
+</html>

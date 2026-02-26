@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Checkout | Meena Collection</title>
+    <style>
+        body { font-family: Roboto, Arial, sans-serif; background: #f1f3f6; margin: 0; padding: 20px; }
+        .checkout-container { max-width: 1000px; margin: auto; display: flex; gap: 20px; }
+        .left-col { flex: 2; }
+        .right-col { flex: 1; }
+        .card { background: white; padding: 20px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .blue-header { background: #2874f0; color: white; padding: 12px 15px; font-weight: bold; text-transform: uppercase; margin: -20px -20px 20px -20px; font-size: 14px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: 1 / -1; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 2px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #2874f0; }
+        .price-row { display: flex; justify-content: space-between; margin: 15px 0; font-size: 15px; }
+        .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; border-top: 1px dashed #e0e0e0; padding-top: 20px; margin-top: 20px; }
+        .order-btn { background: #fb641b; color: white; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: 0.3s; }
+        .order-btn:disabled { background: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="checkout-container">
+        <div class="left-col">
+            <div class="card">
+                <div class="blue-header">1. Delivery Address</div>
+                <div class="form-grid">
+                    <input type="text" id="custName" class="full-width" placeholder="Full Name">
+                    <input type="text" id="custMobile" placeholder="10-digit mobile number">
+                    <input type="text" id="custAltMobile" placeholder="Alternative Phone (Optional)">
+                    <input type="text" id="custPincode" placeholder="Pincode">
+                    <input type="text" id="custState" placeholder="State">
+                    <input type="text" id="custCity" placeholder="Village / City">
+                    <input type="text" id="custHouse" class="full-width" placeholder="Flat / House / Building Name">
+                </div>
+            </div>
+            <div class="card">
+                <div class="blue-header">2. Payment Method</div>
+                <div style="padding: 10px; background: #f9f9f9; border: 1px solid #ddd; font-weight: bold;">
+                    Cash on Delivery (COD) Only
+                </div>
+            </div>
+        </div>
+        <div class="right-col">
+            <div class="card">
+                <div style="font-weight: bold; color: #878787; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">PRICE DETAILS</div>
+                <div style="margin-bottom: 10px; font-size: 14px;">
+                    <b>Items:</b> <span id="itemName">Data load ho raha hai...</span>
+                </div>
+                <div class="price-row">
+                    <span>Price</span> <span id="itemPrice">₹0</span>
+                </div>
+                <div class="price-row">
+                    <span>Delivery Charges</span> <span style="color: #388e3c;">₹50</span>
+                </div>
+                <div class="total-row">
+                    <span>Total Payable</span> <span id="totalPayable">₹0</span>
+                </div>
+                <button class="order-btn" id="confirmBtn" onclick="confirmOrder()">CONFIRM ORDER</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let checkoutItems = []; // Array to store products to be ordered
+
+    function loadCheckoutData() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let urlName = urlParams.get('name');
+        let urlPrice = urlParams.get('price');
+        let urlImage = urlParams.get('image'); // Make sure this is passed from Buy Now
+        
+        let cartData = JSON.parse(localStorage.getItem('meena_cart')) || [];
+        let pending = JSON.parse(localStorage.getItem('pendingCheckout'));
+
+        // Case 1: URL Se Data (Buy Now)
+        if (urlName && urlPrice && urlName !== "null") {
+            checkoutItems = [{ name: decodeURIComponent(urlName), price: parseInt(urlPrice), image: urlImage || "" }];
+        } 
+        // Case 2: Pending Checkout Se (Alternate Buy Now)
+        else if (pending && pending.name) {
+            checkoutItems = [{ name: pending.name, price: parseInt(pending.price), image: pending.image || "" }];
+        }
+        // Case 3: Cart Se Data
+        else if (cartData.length > 0) {
+            checkoutItems = cartData;
+        }
+
+        if (checkoutItems.length > 0) {
+            let total = checkoutItems.reduce((s, i) => s + parseInt(i.price || 0), 0);
+            document.getElementById('itemName').innerText = checkoutItems.map(i => i.name).join(', ');
+            document.getElementById('itemPrice').innerText = "₹" + total;
+            document.getElementById('totalPayable').innerText = "₹" + (total + 50);
+        } else {
+            document.getElementById('itemName').innerText = "Cart Khali Hai";
+        }
+    }
+
+    async function confirmOrder() {
+        const btn = document.getElementById('confirmBtn');
+        const fields = {
+            name: document.getElementById('custName').value.trim(),
+            mobile: document.getElementById('custMobile').value.trim(),
+            pincode: document.getElementById('custPincode').value.trim(),
+            city: document.getElementById('custCity').value.trim(),
+            house: document.getElementById('custHouse').value.trim(),
+            state: document.getElementById('custState').value.trim()
+        };
+
+        if(!fields.name || fields.mobile.length < 10 || !fields.city) {
+            alert("Kripya address ki puri detail bhariye!");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Placing Orders...";
+
+        const fullAddress = `${fields.house}, ${fields.city}, ${fields.state} - ${fields.pincode}. Mob: ${fields.mobile}`;
+        const loginUser = localStorage.getItem('userName') || fields.name; // For tracking historical data
+
+        // Flipkart Style: Create individual order for EACH product
+        const orderPromises = checkoutItems.map(item => {
+            const singleOrder = {
+                customerName: fields.name,
+                loginUser: loginUser, // This links the order to the account
+                productName: item.name,
+                price: item.price,
+                image: item.image,
+                address: fullAddress,
+                status: "Pending", // Admin can change this later
+                orderDate: new Date().toLocaleDateString('en-GB')
+            };
+
+            return fetch('http://localhost:5000/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(singleOrder)
+            });
+        });
+
+        try {
+            await Promise.all(orderPromises); // Send all orders at once
+            
+            localStorage.setItem('userName', loginUser); // Keep user logged in
+            localStorage.removeItem('meena_cart'); 
+            localStorage.removeItem('pendingCheckout');
+            
+            alert("Sabhi Order Safaltapoorvak ho gaye! ✅");
+            window.location.href = "orders.html";
+        } catch (error) {
+            alert("Order failed! Connection check karein.");
+            btn.disabled = false;
+            btn.innerText = "CONFIRM ORDER";
+        }
+    }
+
+    window.onload = function() {
+        loadCheckoutData();
+        if(localStorage.getItem('userName')) {
+            document.getElementById('custName').value = localStorage.getItem('userName');
+        }
+    };
+    </script>
+</body>
+</html>
